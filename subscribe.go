@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/SierraSoftworks/multicast/v2"
 	"github.com/r3labs/sse/v2"
+	"gopkg.in/cenkalti/backoff.v1"
 )
 
 type Event[T any] struct {
@@ -16,6 +18,14 @@ type Event[T any] struct {
 }
 
 func (c Collection[T]) Subscribe(targets ...string) (*Stream[T], error) {
+	return c.SubscribeWith(defaultSseOptions, targets...)
+}
+
+func defaultSseOptions(client *sse.Client) {
+	client.ReconnectStrategy = backoff.NewConstantBackOff(time.Second)
+}
+
+func (c Collection[T]) SubscribeWith(opts func(*sse.Client), targets ...string) (*Stream[T], error) {
 	if err := c.Authorize(); err != nil {
 		return nil, err
 	}
@@ -24,7 +34,7 @@ func (c Collection[T]) Subscribe(targets ...string) (*Stream[T], error) {
 		targets = []string{c.Name}
 	}
 
-	client := sse.NewClient(c.url + "/api/realtime")
+	client := sse.NewClient(c.url+"/api/realtime", opts)
 	sch := make(chan *sse.Event)
 	if err := client.SubscribeChanRaw(sch); err != nil {
 		return nil, err
