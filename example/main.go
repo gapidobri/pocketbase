@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/gapidobri/pocketbase"
 	"github.com/mitchellh/mapstructure"
-	"github.com/r--w/pocketbase"
 	"go.uber.org/multierr"
 )
 
